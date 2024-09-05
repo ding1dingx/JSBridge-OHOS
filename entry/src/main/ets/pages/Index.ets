@@ -61,12 +61,12 @@ struct Index {
 
   private loadJsBridge() {
     try {
-      let jsBridge = getContext(this).resourceManager.getRawFileContentSync('bridge.js');
-      let decoder = new util.TextDecoder('utf-8');
-      let content = decoder.decode(jsBridge);
+      let jsBridge = getContext(this).resourceManager.getRawFileContentSync('bridge.min.js');
+      let decoder = util.TextDecoder.create('utf-8');
+      let content = decoder.decodeToString(jsBridge).trim();
       this.controller.runJavaScript(content);
     } catch (error) {
-      Logger.error(TAG, `加载bridge.js失败: ${error}`);
+      Logger.error(TAG, `加载 bridge.min.js 失败: ${error}`);
     }
   }
 }
