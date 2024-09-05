@@ -2,9 +2,11 @@
   "name": "entry",
   "version": "1.0.0",
   "description": "Please describe the basic information.",
-  "main": "",
+  "main": "BridgeDemo",
   "author": "",
   "license": "",
-  "dependencies": {}
+  "dependencies": {
+    "@ding1ding/jsbridge-ohos": "file:../library"
+  }
 }
 
