@@ -1,6 +1,6 @@
 import { webview } from '@kit.ArkWeb';
 import { HashMap, util } from '@kit.ArkTS';
-import { Logger } from '@nzy/logger';
+import hilog from '@ohos.hilog';
 
 const TAG = "JsBridge";
 
@@ -22,9 +22,11 @@ struct Index {
         .zoomAccess(false)
         .onPageEnd(() => {
           this.loadJsBridge();
+          console.info(TAG, "DOM content loaded");
+          this.controller.runJavaScript('testLogMessage()');
         })
         .onConsole((event) => {
-          Logger.info(TAG, `H5控制台: ${event?.message.getMessage()}`);
+          hilog.info(0x0000, TAG, `H5控制台: ${event?.message.getMessage()}`);
           return true;
         })
         .width('100%')
@@ -35,7 +37,7 @@ struct Index {
           Button('发送消息到H5(带回调)')
             .onClick(() => {
               this.jsBridgeHelper.callHandler('functionInJs', 'ArkTS发来的消息', (data) => {
-                Logger.info(TAG, `按钮回调: ${data}`);
+                hilog.info(0x0000, TAG, `按钮回调: ${data}`);
               });
             }).fontSize(14)
           Blank().width(10)
@@ -66,7 +68,7 @@ struct Index {
       let content = decoder.decodeToString(jsBridge).trim();
       this.controller.runJavaScript(content);
     } catch (error) {
-      Logger.error(TAG, `加载 bridge.min.js 失败: ${error}`);
+      hilog.error(0x0000, TAG, `加载 bridge.min.js 失败: ${error}`);
     }
   }
 }
@@ -87,12 +89,12 @@ class MainJavascriptInterface {
   }
 
   postMessage(messageJSON: string): void {
-    Logger.info(TAG, `收到来自JS的消息: ${messageJSON}`);
+    hilog.info(0x0000, TAG, `收到来自JS的消息: ${messageJSON}`);
     try {
       const message: BridgeMessage = JSON.parse(messageJSON);
       this.jsBridgeHelper.handleMessageFromJS(message);
     } catch (error) {
-      Logger.error(TAG, `解析消息失败: ${error}`);
+      hilog.error(0x0000, TAG, `解析消息失败: ${error}`);
     }
   }
 }
@@ -141,7 +143,7 @@ class JsBridgeHelper {
           });
         } : undefined);
       } else {
-        Logger.warn(TAG, `没有找到处理程序来处理JS消息: ${JSON.stringify(message)}`);
+        hilog.warn(0x0000, TAG, `没有找到处理程序来处理JS消息: ${JSON.stringify(message)}`);
       }
     }
   }

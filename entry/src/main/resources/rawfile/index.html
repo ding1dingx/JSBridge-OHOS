@@ -20,19 +20,25 @@
       #messageLog {
         border: 1px solid #ccc;
         padding: 10px;
-        margin-top: 20px;
+        margin: 20px;
         height: 200px;
         overflow-y: auto;
+        background-color: #f0f0f0;
       }
     </style>
   </head>
   <body>
     <h1>JSBridge Demo</h1>
+    <button onclick="testLogMessage()">测试日志消息</button>
     <button onclick="sendMessageToNative()">发送消息到原生应用</button>
     <button onclick="callNativeWithCallback()">调用原生方法（带回调）</button>
-    <div id="messageLog">message</div>
+    <div id="messageLog"></div>
 
     <script>
+      function testLogMessage() {
+        logMessage("这是一条测试消息 " + new Date().toLocaleString());
+      }
+
       function setupWebViewJavascriptBridge(callback) {
         if (window.WebViewJavascriptBridge) {
           return callback(WebViewJavascriptBridge);
@@ -40,6 +46,8 @@
           document.addEventListener(
             "WebViewJavascriptBridgeReady",
             function () {
+              console.log("WebViewJavascriptBridge is ready");
+              logMessage("桥接已准备就绪");
               callback(WebViewJavascriptBridge);
             },
             false
