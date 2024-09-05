@@ -28,7 +28,7 @@
     },
 
     callHandler(handlerName, data, responseCallback) {
-      if (arguments.length === 2 && typeof data === 'function') {
+      if (arguments.length === 2 && typeof data === "function") {
         responseCallback = data;
         data = null;
       }
@@ -56,7 +56,7 @@
       if (handler) {
         handler(message.data, responseCallback);
       } else {
-        console.warn('WebViewJavascriptBridge: No handler for message from Native:', message);
+        console.warn("WebViewJavascriptBridge: No handler for message from Native:", message);
       }
     },
   };
