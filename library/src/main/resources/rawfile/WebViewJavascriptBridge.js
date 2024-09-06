@@ -16,6 +16,7 @@
   const FETCH_QUEUE_INTERVAL = 20;
   const CUSTOM_PROTOCOL_SCHEME = "yy";
   const QUEUE_HAS_MESSAGE = "__QUEUE_MESSAGE__";
+  const CALLBACK_TIMEOUT = 60000; // 60 seconds
 
   function _createQueueReadyIframe() {
     messagingIframe = document.createElement("iframe");
@@ -32,7 +33,7 @@
 
   function init(messageHandler) {
     if (WebViewJavascriptBridge._messageHandler) {
-      throw new Error("WebViewJavascriptBridge.init called twice");
+      _cleanup();
     }
     _createQueueReadyIframe();
     _createQueueReadyIframe4biz();
@@ -43,6 +44,40 @@
       _dispatchMessageFromNative(receivedMessages[i]);
     }
     WebViewJavascriptBridge.inited = true;
+    setInterval(_cleanupCallbacks, CALLBACK_TIMEOUT);
+  }
+
+  function _cleanup() {
+    receiveMessageQueue = [];
+    Object.keys(messageHandlers).forEach((key) => delete messageHandlers[key]);
+    sendMessageQueue = [];
+    Object.keys(responseCallbacks).forEach(
+      (key) => delete responseCallbacks[key]
+    );
+    uniqueId = 1;
+    lastCallTime = 0;
+    if (stoId) {
+      clearTimeout(stoId);
+      stoId = null;
+    }
+    if (messagingIframe) {
+      document.documentElement.removeChild(messagingIframe);
+      messagingIframe = null;
+    }
+    if (bizMessagingIframe) {
+      document.documentElement.removeChild(bizMessagingIframe);
+      bizMessagingIframe = null;
+    }
+  }
+
+  function _cleanupCallbacks() {
+    const now = Date.now();
+    Object.keys(responseCallbacks).forEach((key) => {
+      const callback = responseCallbacks[key];
+      if (callback.timestamp && now - callback.timestamp > CALLBACK_TIMEOUT) {
+        delete responseCallbacks[key];
+      }
+    });
   }
 
   function send(data, responseCallback) {
@@ -53,7 +88,7 @@
     messageHandlers[handlerName] = handler;
   }
 
-  function removeHandler(handlerName, handler) {
+  function removeHandler(handlerName) {
     delete messageHandlers[handlerName];
   }
 
@@ -69,10 +104,15 @@
     let callbackId = "";
     if (responseCallback) {
       callbackId =
-        typeof responseCallback === "string" ? responseCallback : `cb_${uniqueId++}_${Date.now()}`;
+        typeof responseCallback === "string"
+          ? responseCallback
+          : `cb_${uniqueId++}_${Date.now()}`;
 
       if (typeof responseCallback === "function") {
-        responseCallbacks[callbackId] = responseCallback;
+        responseCallbacks[callbackId] = {
+          callback: responseCallback,
+          timestamp: Date.now(),
+        };
       }
     }
 
@@ -83,9 +123,13 @@
     try {
       const fn = eval("WebViewJavascriptBridge." + handlerName);
       if (typeof fn === "function") {
-        const responseData = fn.call(WebViewJavascriptBridge, JSON.stringify(message), callbackId);
+        const responseData = fn.call(
+          WebViewJavascriptBridge,
+          JSON.stringify(message),
+          callbackId
+        );
         if (responseData && responseCallbacks[callbackId]) {
-          responseCallbacks[callbackId](responseData);
+          responseCallbacks[callbackId].callback(responseData);
           delete responseCallbacks[callbackId];
         }
       }
@@ -112,7 +156,9 @@
     const messageQueueString = JSON.stringify(sendMessageQueue);
     sendMessageQueue = [];
     bizMessagingIframe.src =
-      CUSTOM_PROTOCOL_SCHEME + "://return/_fetchQueue/" + encodeURIComponent(messageQueueString);
+      CUSTOM_PROTOCOL_SCHEME +
+      "://return/_fetchQueue/" +
+      encodeURIComponent(messageQueueString);
   }
 
   function _dispatchMessageFromNative(messageJSON) {
@@ -120,10 +166,11 @@
       const message = JSON.parse(messageJSON);
       let responseCallback;
       if (message.responseId) {
-        responseCallback = responseCallbacks[message.responseId];
-        if (!responseCallback) {
+        const callbackInfo = responseCallbacks[message.responseId];
+        if (!callbackInfo) {
           return;
         }
+        responseCallback = callbackInfo.callback;
         responseCallback(message.responseData);
         delete responseCallbacks[message.responseId];
       } else {
@@ -167,11 +214,12 @@
   WebViewJavascriptBridge._handleMessageFromNative = _handleMessageFromNative;
   WebViewJavascriptBridge._fetchQueue = _fetchQueue;
 
-  const readyEvent = document.createEvent("Events");
-  const jobs = window.WVJBCallbacks || [];
+  const readyEvent = new CustomEvent("WebViewJavascriptBridgeReady", {
+    detail: { bridge: WebViewJavascriptBridge },
+  });
+  readyEvent.bridge = WebViewJavascriptBridge; // 向后兼容
 
-  readyEvent.initEvent("WebViewJavascriptBridgeReady");
-  readyEvent.bridge = WebViewJavascriptBridge;
+  const jobs = window.WVJBCallbacks || [];
 
   window.WVJBCallbacks = [];
 
