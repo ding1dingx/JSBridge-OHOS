@@ -1,101 +1,116 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
   <head>
-    <meta charset="UTF-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JSBridge Demo</title>
     <style>
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-          "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-          "Noto Color Emoji";
-        margin: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        padding: 20px;
         line-height: 1.6;
+        color: #333;
+        background-color: #f5f5f5;
+        margin: 0;
       }
-      button {
-        margin: 10px 0;
-        padding: 10px;
-        font-size: 16px;
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
-      #messageLog {
-        border: 1px solid #ccc;
+      h1 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 20px;
+      }
+      input[type="button"] {
+        font-size: 18px;
+        height: 50px;
+        width: 100%;
+        margin-bottom: 15px;
         padding: 10px;
-        margin: 20px;
-        height: 200px;
-        overflow-y: auto;
-        background-color: #f0f0f0;
+        border: none;
+        border-radius: 4px;
+        background-color: #3498db;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      input[type="button"]:hover {
+        background-color: #2980b9;
+      }
+      #show {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-top: 15px;
+        background-color: #f9f9f9;
+        min-height: 150px;
+        word-wrap: break-word;
+        border-radius: 4px;
       }
     </style>
   </head>
   <body>
-    <h1>JSBridge Demo</h1>
-    <button onclick="testLogMessage()">测试日志消息</button>
-    <button onclick="sendMessageToNative()">发送消息到原生应用</button>
-    <button onclick="callNativeWithCallback()">调用原生方法（带回调）</button>
-    <div id="messageLog"></div>
-
+    <div class="container">
+      <h1>JSBridge Demo</h1>
+      <input type="button" id="send-native" value="发消息给Native" onclick="sendNative()" />
+      <input type="button" id="call-native" value="调用Native方法" onclick="callNative()" />
+      <div id="show"></div>
+    </div>
     <script>
-      function testLogMessage() {
-        logMessage("这是一条测试消息 " + new Date().toLocaleString());
+      const $ = (id) => document.getElementById(id);
+      const log = (content) => ($("show").innerHTML = content);
+
+      function sendNative() {
+        const data = { id: 1, content: '这是一个图片 <img src="a.png"/> test\r\nhahaha' };
+        WebViewJavascriptBridge.doSend(data, (responseData) => {
+          log(`repsonseData from java, data = ${responseData}`);
+        });
       }
 
-      function setupWebViewJavascriptBridge(callback) {
-        if (window.WebViewJavascriptBridge) {
-          return callback(WebViewJavascriptBridge);
+      function callNative() {
+        window.WebViewJavascriptBridge.callHandler(
+          "submitFromWeb",
+          { param: "中文测试" },
+          (responseData) => {
+            log(`send get responseData from java, data = ${responseData}`);
+          }
+        );
+      }
+
+      function connectWebViewJavascriptBridge(callback) {
+        if (window.WebViewJavascriptBridge && WebViewJavascriptBridge.inited) {
+          callback(WebViewJavascriptBridge);
         } else {
           document.addEventListener(
             "WebViewJavascriptBridgeReady",
-            function () {
-              console.log("WebViewJavascriptBridge is ready");
-              logMessage("桥接已准备就绪");
-              callback(WebViewJavascriptBridge);
-            },
+            () => callback(WebViewJavascriptBridge),
             false
           );
         }
       }
 
-      setupWebViewJavascriptBridge(function (bridge) {
-        bridge.registerHandler("functionInJs", function (data, responseCallback) {
-          console.log("原生调用了JS方法 'functionInJs'，数据：", data);
-          logMessage("收到来自原生的消息: " + data);
-          responseCallback("JS已收到消息：" + data);
+      connectWebViewJavascriptBridge((bridge) => {
+        bridge.init((message, responseCallback) => {
+          console.log("JS got a message", message);
+          const data = { "Javascript Responds": "测试中文!" };
+
+          if (responseCallback) {
+            console.log("JS responding with", data);
+            responseCallback(data);
+          }
+        });
+
+        bridge.registerHandler("functionInJs", (data, responseCallback) => {
+          log(`data from Java: = ${data}${Date.now()}`);
+          if (responseCallback) {
+            responseCallback("Javascript Says Right back aka!");
+          }
         });
       });
-
-      function sendMessageToNative() {
-        WebViewJavascriptBridge.callHandler("", "Hello from JS!", function (response) {
-          console.log("原生应用的响应：", response);
-          logMessage("原生应用的响应: " + response);
-        });
-      }
-
-      function callNativeWithCallback() {
-        WebViewJavascriptBridge.callHandler(
-          "nativeMethod",
-          { key: "testValue" },
-          function (response) {
-            console.log("原生方法的响应：", response);
-            logMessage("原生方法的响应: " + response);
-          }
-        );
-      }
-
-      function logMessage(message) {
-        var messageLog = document.getElementById("messageLog");
-        messageLog.innerHTML += message + "<br>";
-        messageLog.scrollTop = messageLog.scrollHeight;
-      }
-
-      // 监听来自原生的消息
-      document.addEventListener(
-        "message",
-        function (e) {
-          console.log("收到来自原生的消息：", e.data);
-          logMessage("收到来自原生的消息: " + e.data);
-        },
-        false
-      );
     </script>
   </body>
 </html>

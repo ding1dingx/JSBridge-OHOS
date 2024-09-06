@@ -2,158 +2,142 @@ import { webview } from '@kit.ArkWeb';
 import { HashMap, util } from '@kit.ArkTS';
 import hilog from '@ohos.hilog';
 
-const TAG = "JsBridge";
+const TAG = "JSBridge"
 
 @Entry
 @Component
 struct Index {
-  @State url: string | Resource = $rawfile('index.html');
   @State controller: webview.WebviewController = new webview.WebviewController();
-  jsBridgeHelper: JsBridgeHelper = new JsBridgeHelper(this.controller);
+  jsBridgeHelper: JsBridgeHelper = new JsBridgeHelper(this.controller)
   @State jsBridge: MainJavascriptInterface = new MainJavascriptInterface(this.jsBridgeHelper);
+  @State url: string | Resource = $rawfile('index.html')
 
   build() {
     Column() {
       Web({ src: this.url, controller: this.controller })
         .onControllerAttached(() => {
-          this.controller.registerJavaScriptProxy(this.jsBridge, "HarmonyBridge", ["postMessage"]);
-          this.controller.refresh();
+          // 注册 JSBridge 类，h5 中的名字，注册的方法
+          this.controller.registerJavaScriptProxy(this.jsBridge, "WebViewJavascriptBridge",
+            ["send", "response", "submitFromWeb"]);
+          // 这种注册必须调用 refresh
+          this.controller.refresh()
         })
         .zoomAccess(false)
         .onPageEnd(() => {
-          this.loadJsBridge();
-          console.info(TAG, "DOM content loaded");
-          this.controller.runJavaScript('testLogMessage()');
+          // 加载 bridge.min.js
+          let jsBridge = getContext(this).resourceManager.getRawFileContentSync('bridge.min.js')
+          let decoder = util.TextDecoder.create('utf-8')
+          let content = decoder.decodeToString(jsBridge).trim()
+          hilog.info(0x0000, TAG, '读取到 ' + content)
+          this.controller.loadUrl('javascript:' + content)
         })
         .onConsole((event) => {
-          hilog.info(0x0000, TAG, `H5控制台: ${event?.message.getMessage()}`);
-          return true;
+          // h5 的打印，可以在这里看到
+          hilog.info(0x0000, TAG, `H5的打印-> ${event?.message.getMessage()}`)
+          return true
         })
         .width('100%')
         .height('90%')
 
-      Column() {
-        Row() {
-          Button('发送消息到H5(带回调)')
-            .onClick(() => {
-              this.jsBridgeHelper.callHandler('functionInJs', 'ArkTS发来的消息', (data) => {
-                hilog.info(0x0000, TAG, `按钮回调: ${data}`);
-              });
-            }).fontSize(14)
-          Blank().width(10)
-          Button('发送消息到H5(无回调)')
-            .onClick(() => {
-              this.jsBridgeHelper.sendToWeb('ArkTS发来的消息');
-            }).fontSize(14)
-        }
-        .width('100%')
-        .justifyContent(FlexAlign.Center)
-        .padding({
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: 16
-        })
-      }
-      .backgroundColor('#F1F3F5')
+      Row() {
+        Button('给h5发送消息，有回调').onClick(() => {
+          this.jsBridgeHelper.callHandler('functionInJs', '大哥好呀', (data) => {
+            hilog.info(0x0000, TAG, `Button => 点击回调 ${data}`)
+          })
+        }).fontSize(14)
+        Blank().width(10)
+        Button('给h5发送消息，无回调').onClick(() => {
+          this.jsBridgeHelper.sendToWeb('hello')
+        }).fontSize(14)
+      }.width('100%')
+      .justifyContent(FlexAlign.Center)
+      .padding({
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: 16
+      })
     }
-    .width('100%')
     .height('100%')
+    .width('100%')
   }
-
-  private loadJsBridge() {
-    try {
-      let jsBridge = getContext(this).resourceManager.getRawFileContentSync('bridge.min.js');
-      let decoder = util.TextDecoder.create('utf-8');
-      let content = decoder.decodeToString(jsBridge).trim();
-      this.controller.runJavaScript(content);
-    } catch (error) {
-      hilog.error(0x0000, TAG, `加载 bridge.min.js 失败: ${error}`);
-    }
-  }
-}
-
-interface BridgeMessage {
-  handlerName?: string;
-  data?: string;
-  callbackId?: string;
-  responseId?: string;
-  responseData?: string;
 }
 
 class MainJavascriptInterface {
-  jsBridgeHelper: JsBridgeHelper;
+  jsBridgeHelper: JsBridgeHelper
 
   constructor(jsBridgeHelper: JsBridgeHelper) {
     this.jsBridgeHelper = jsBridgeHelper;
   }
 
-  postMessage(messageJSON: string): void {
-    hilog.info(0x0000, TAG, `收到来自JS的消息: ${messageJSON}`);
-    try {
-      const message: BridgeMessage = JSON.parse(messageJSON);
-      this.jsBridgeHelper.handleMessageFromJS(message);
-    } catch (error) {
-      hilog.error(0x0000, TAG, `解析消息失败: ${error}`);
+  // h5 调用 NA，NA回调给 h5 的，是通过 runJavaScript
+  send(data: string, callbackId: string): string {
+    hilog.info(0x0000, TAG,
+      `MainJavascriptInterface：method=send, data=>${data} , callbackId=>${callbackId}`)
+    // 这里的返回值其实是没有意义的
+    return '--'
+  }
+
+  // 当 NA 发送消息，h5 回调给 NA 是用这种方法
+  response(data: string, responseId: string): void {
+    hilog.info(0x0000, TAG,
+      `MainJavascriptInterface： method=response  data=>${data} , responseId=>${responseId}`)
+    if (this.jsBridgeHelper.map.hasKey(responseId)) {
+      this.jsBridgeHelper.map.remove(responseId)(data)
     }
   }
+
+  submitFromWeb(data: string, callbackId: string) {
+    hilog.info(0x0000, TAG,
+      `MainJavascriptInterface: method=submitFromWeb data=>${data} , responseId=>${callbackId}`)
+    this.jsBridgeHelper.sendResponse('submitFromWeb response', callbackId)
+  }
+}
+
+class JSRequest {
+  callbackId: string = '';
+  data: string = '';
+  handlerName: string = '';
+}
+
+class JSResponse {
+  responseId: string = ''
+  responseData: string = ''
 }
 
 class JsBridgeHelper {
   controller: webview.WebviewController;
-  messageHandlers: HashMap<string, (data: string,
-    responseCallback?: (responseData: string) => void) => void> = new HashMap();
-  responseCallbacks: HashMap<string, (data: string) => void> = new HashMap();
-  uniqueId: number = 1;
+  map: HashMap<string, (data: string) => void> = new HashMap()
 
   constructor(controller: webview.WebviewController) {
-    this.controller = controller;
+    this.controller = controller
   }
 
-  registerHandler(handlerName: string,
-    handler: (data: string, responseCallback?: (responseData: string) => void) => void) {
-    this.messageHandlers.set(handlerName, handler);
+  sendResponse(data: string, callbackId: string) {
+    let response: JSResponse = new JSResponse()
+    response.responseId = callbackId
+    response.responseData = data
+    let content =
+      `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(response)}');`
+    hilog.info(0x0000, TAG, `json=> ${content}`)
+    this.controller.runJavaScript(content)
   }
 
-  callHandler(handlerName: string, data: string,
-    responseCallback?: (responseData: string) => void) {
-    const message: BridgeMessage = { handlerName, data };
-    if (responseCallback) {
-      const callbackId = `cb_${this.uniqueId++}_${Date.now()}`;
-      this.responseCallbacks.set(callbackId, responseCallback);
-      message.callbackId = callbackId;
+  callHandler(handlerName: string, data: string, callBack?: (event: string) => void) {
+    let callbackId = `arkts_cb_${new Date().getTime()}`
+    let jsRequest = new JSRequest()
+    jsRequest.data = data
+    if (callBack) {
+      this.map.set(callbackId, callBack)
+      jsRequest.callbackId = callbackId
     }
-    this.sendMessageToJS(message);
-  }
-
-  handleMessageFromJS(message: BridgeMessage) {
-    if (message.responseId) {
-      const responseCallback = this.responseCallbacks.get(message.responseId);
-      if (responseCallback && message.responseData) {
-        responseCallback(message.responseData);
-        this.responseCallbacks.remove(message.responseId);
-      }
-    } else if (message.handlerName) {
-      const handler = this.messageHandlers.get(message.handlerName);
-      if (handler) {
-        handler(message.data || '', message.callbackId ? (responseData: string) => {
-          this.sendMessageToJS({
-            responseId: message.callbackId,
-            responseData: responseData
-          });
-        } : undefined);
-      } else {
-        hilog.warn(0x0000, TAG, `没有找到处理程序来处理JS消息: ${JSON.stringify(message)}`);
-      }
-    }
-  }
-
-  sendMessageToJS(message: BridgeMessage) {
-    const messageJSON = JSON.stringify(message);
-    this.controller.runJavaScript(`WebViewJavascriptBridge.handleMessageFromNative('${messageJSON}');`);
+    jsRequest.handlerName = handlerName
+    let content =
+      `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(jsRequest)}');`
+    this.controller.runJavaScript(content)
   }
 
   sendToWeb(data: string) {
-    this.callHandler('', data);
+    this.callHandler('', data)
   }
 }
