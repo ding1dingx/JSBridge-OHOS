@@ -67,7 +67,7 @@
       function sendNative() {
         const data = { id: 1, content: '这是一个图片 <img src="a.png"/> test\r\nhahaha' };
         WebViewJavascriptBridge.doSend(data, (responseData) => {
-          log(`repsonseData from java, data = ${responseData}`);
+          log(`Response data from native, data = ${responseData}`);
         });
       }
 
@@ -76,7 +76,7 @@
           "submitFromWeb",
           { param: "中文测试" },
           (responseData) => {
-            log(`send get responseData from java, data = ${responseData}`);
+            log(`Send get response data from native, data = ${responseData}`);
           }
         );
       }
@@ -95,9 +95,9 @@
 
       connectWebViewJavascriptBridge((bridge) => {
         bridge.init((message, responseCallback) => {
-          console.log("JS got a message", message);
-          const data = { "Javascript Responds": "测试中文!" };
-
+          console.log("JS got a message: ", message);
+          log(`JS got a message: ${message}`);
+          const data = { "Javascript Responds": "测试中文" };
           if (responseCallback) {
             console.log("JS responding with", data);
             responseCallback(data);
@@ -105,7 +105,7 @@
         });
 
         bridge.registerHandler("functionInJs", (data, responseCallback) => {
-          log(`data from Java: = ${data}${Date.now()}`);
+          log(`Data from native: ${data}${Date.now()}`);
           if (responseCallback) {
             responseCallback("Javascript Says Right back aka!");
           }
