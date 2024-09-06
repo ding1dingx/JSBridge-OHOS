@@ -1,5 +1,5 @@
 import { webview } from '@kit.ArkWeb';
-import { HashMap, util } from '@kit.ArkTS';
+import { HashMap, JSON, util } from '@kit.ArkTS';
 import hilog from '@ohos.hilog';
 
 const TAG = "JSBridge"
@@ -19,7 +19,7 @@ struct Index {
           // 注册 JSBridge 类，h5 中的名字，注册的方法
           this.controller.registerJavaScriptProxy(
             this.jsBridge, "WebViewJavascriptBridge",
-            ["send", "response", "submitFromWeb"]
+            ["send", "response", "submitFromWeb", "deviceLoadJavascriptSuccess"]
           );
           // 这种注册必须调用 refresh
           this.controller.refresh()
@@ -35,7 +35,7 @@ struct Index {
         })
         .onConsole((event) => {
           // h5 的打印，可以在这里看到
-          hilog.info(0x0000, TAG, `[console log] ${event?.message.getMessage()}`)
+          hilog.info(0x0000, TAG, `[console] ${event?.message.getMessage()}`)
           return true
         })
         .width('100%')
@@ -65,6 +65,7 @@ struct Index {
   }
 }
 
+
 class MainJavascriptInterface {
   private jsBridgeHelper: JSBridgeHelper
 
@@ -82,12 +83,18 @@ class MainJavascriptInterface {
   // 当 native 发送消息，h5 回调给 native 是用这种方法
   response(data: string, responseId: string): void {
     hilog.info(0x0000, TAG, `MainJavascriptInterface: method=response, data=>${data}, responseId=>${responseId}`)
-    if (this.jsBridgeHelper.map.hasKey(responseId)) {
-      this.jsBridgeHelper.map.remove(responseId)(data)
+    if (this.jsBridgeHelper.messageMap.hasKey(responseId)) {
+      this.jsBridgeHelper.messageMap.remove(responseId)(data)
     }
   }
 
-  submitFromWeb(data: string, callbackId: string) {
+  deviceLoadJavascriptSuccess(data: string | object | null, callbackId: string) {
+    hilog.info(0x0000, TAG, `MainJavascriptInterface: method=submitFromWeb data=>${data} , responseId=>${callbackId}`)
+    const jsonString = '{"result":"HarmonyOS"}';
+    this.jsBridgeHelper.sendResponse(JSON.parse(jsonString), callbackId)
+  }
+
+  submitFromWeb(data: string | object | null, callbackId: string) {
     hilog.info(0x0000, TAG, `MainJavascriptInterface: method=submitFromWeb data=>${data} , responseId=>${callbackId}`)
     this.jsBridgeHelper.sendResponse('submitFromWeb response', callbackId)
   }
@@ -95,42 +102,42 @@ class MainJavascriptInterface {
 
 class JSRequest {
   callbackId: string = '';
-  data: string = '';
+  data?: string | object | null;
   handlerName: string = '';
 }
 
 class JSResponse {
   responseId: string = ''
-  responseData: string = ''
+  responseData?: string | object | null
 }
 
 class JSBridgeHelper {
   controller: webview.WebviewController;
-  map: HashMap<string, (data: string) => void> = new HashMap()
+  messageMap: HashMap<string, (data: string) => void> = new HashMap()
 
   constructor(controller: webview.WebviewController) {
     this.controller = controller
   }
 
-  sendResponse(data: string, callbackId: string) {
-    let response: JSResponse = new JSResponse()
-    response.responseId = callbackId
-    response.responseData = data
-    let content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(response)}');`
+  sendResponse(data: string | object | null, callbackId: string) {
+    let message: JSResponse = new JSResponse()
+    message.responseId = callbackId
+    message.responseData = data
+    let content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(message)}');`
     hilog.info(0x0000, TAG, `json=> ${content}`)
     this.controller.runJavaScript(content)
   }
 
   callHandler(handlerName: string, data: string, callBack?: (event: string) => void) {
     let callbackId = `arkts_cb_${new Date().getTime()}`
-    let jsRequest = new JSRequest()
-    jsRequest.data = data
+    let message = new JSRequest()
+    message.data = data
     if (callBack) {
-      this.map.set(callbackId, callBack)
-      jsRequest.callbackId = callbackId
+      this.messageMap.set(callbackId, callBack)
+      message.callbackId = callbackId
     }
-    jsRequest.handlerName = handlerName
-    let content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(jsRequest)}');`
+    message.handlerName = handlerName
+    let content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(message)}');`
     this.controller.runJavaScript(content)
   }
 

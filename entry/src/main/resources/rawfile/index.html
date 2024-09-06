@@ -104,6 +104,22 @@
           }
         });
 
+        bridge.callHandler("deviceLoadJavascriptSuccess", { key: "JSValue" }, (responseData) => {
+          const { result } = responseData;
+          const platforms = {
+            iOS: "iOS",
+            Android: "Android",
+            HarmonyOS: "HarmonyOS",
+          };
+
+          if (result in platforms) {
+            const message = `Javascript was loaded by ${result} and successfully loaded.`;
+            console.log(message);
+            log(message);
+            window[`${result}LoadJSSuccess`] = true;
+          }
+        });
+
         bridge.registerHandler("functionInJs", (data, responseCallback) => {
           log(`Data from native: ${data}${Date.now()}`);
           if (responseCallback) {
