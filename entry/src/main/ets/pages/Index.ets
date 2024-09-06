@@ -65,7 +65,6 @@ struct Index {
   }
 }
 
-
 class MainJavascriptInterface {
   private jsBridgeHelper: JSBridgeHelper
 
@@ -89,7 +88,8 @@ class MainJavascriptInterface {
   }
 
   deviceLoadJavascriptSuccess(data: string | object | null, callbackId: string) {
-    hilog.info(0x0000, TAG, `MainJavascriptInterface: method=submitFromWeb data=>${data} , responseId=>${callbackId}`)
+    hilog.info(0x0000, TAG,
+      `MainJavascriptInterface: method=deviceLoadJavascriptSuccess data=>${data} , responseId=>${callbackId}`)
     const jsonString = '{"result":"HarmonyOS"}';
     this.jsBridgeHelper.sendResponse(JSON.parse(jsonString), callbackId)
   }
