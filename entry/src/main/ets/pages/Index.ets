@@ -89,13 +89,13 @@ class MainJavascriptInterface {
 
   deviceLoadJavascriptSuccess(data: string | object | null, callbackId: string) {
     hilog.info(0x0000, TAG,
-      `MainJavascriptInterface: method=deviceLoadJavascriptSuccess data=>${data} , responseId=>${callbackId}`)
+      `MainJavascriptInterface: method=deviceLoadJavascriptSuccess data=>${data}, responseId=>${callbackId}`)
     const jsonString = '{"result":"HarmonyOS"}';
     this.jsBridgeHelper.sendResponse(JSON.parse(jsonString), callbackId)
   }
 
   submitFromWeb(data: string | object | null, callbackId: string) {
-    hilog.info(0x0000, TAG, `MainJavascriptInterface: method=submitFromWeb data=>${data} , responseId=>${callbackId}`)
+    hilog.info(0x0000, TAG, `MainJavascriptInterface: method=submitFromWeb data=>${data}, responseId=>${callbackId}`)
     this.jsBridgeHelper.sendResponse('submitFromWeb response', callbackId)
   }
 }
