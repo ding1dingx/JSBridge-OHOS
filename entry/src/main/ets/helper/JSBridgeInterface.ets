@@ -1,6 +1,5 @@
-import { JSBridgeHelper } from './JSBridgeHelper';
 import { JSON } from '@kit.ArkTS';
-import { createLogger } from '../utils/Logger';
+import { createLogger, JSBridgeHelper } from '@ding1ding/jsbridge-ohos';
 import hilog from '@ohos.hilog';
 
 const log = createLogger(0x1000, 'JSBridgeInterface');

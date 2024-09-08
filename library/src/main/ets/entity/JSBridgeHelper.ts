@@ -19,29 +19,25 @@ export class JSBridgeHelper {
     let message: JSResponse = new JSResponse();
     message.responseId = callbackId;
     message.responseData = data;
-    let content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(
-      message
-    )}');`;
-    log.info(`json=> ${content}`);
+    let content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(message)}');`;
+    log.info(`handleMessageFromNative ==> ${content}`);
     this.controller.runJavaScript(content);
   }
 
   callHandler(
     handlerName: string,
     data: string,
-    callBack?: (event: string) => void
+    callback?: (event: string) => void
   ) {
     let callbackId = `arkts_cb_${new Date().getTime()}`;
     let message = new JSRequest();
     message.data = data;
-    if (callBack) {
-      this.messageMap.set(callbackId, callBack);
+    if (callback) {
+      this.messageMap.set(callbackId, callback);
       message.callbackId = callbackId;
     }
     message.handlerName = handlerName;
-    let content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(
-      message
-    )}');`;
+    let content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(message)}');`;
     this.controller.runJavaScript(content);
   }
 

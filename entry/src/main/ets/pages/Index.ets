@@ -1,6 +1,7 @@
 import { webview } from '@kit.ArkWeb';
 import { util } from '@kit.ArkTS';
-import { createLogger, JSBridgeHelper, JSBridgeInterface } from '@ding1ding/jsbridge-ohos';
+import { createLogger, JSBridgeHelper } from '@ding1ding/jsbridge-ohos';
+import { JSBridgeInterface } from '../helper/JSBridgeInterface';
 import hilog from '@ohos.hilog';
 
 const log = createLogger(0x1000, 'Index');
