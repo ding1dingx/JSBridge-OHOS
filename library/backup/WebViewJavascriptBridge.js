@@ -233,5 +233,6 @@
   const jobs = window.WVJBCallbacks || [];
   window.WVJBCallbacks = [];
   jobs.forEach((job) => job(WebViewJavascriptBridge));
+  
   document.dispatchEvent(readyEvent);
 })();
