@@ -1,4 +1,5 @@
 ;(function () {
+  "use strict";
   if (window.WebViewJavascriptBridge && window.WebViewJavascriptBridge.inited) {
     return;
   }
@@ -16,22 +17,22 @@
   const FETCH_QUEUE_INTERVAL = 20;
   const CUSTOM_PROTOCOL_SCHEME = "yy";
   const QUEUE_HAS_MESSAGE = "__QUEUE_MESSAGE__";
-  const CALLBACK_TIMEOUT = 60000; // 60 seconds
+  const CALLBACK_TIMEOUT = 60000;
 
-  function _createQueueReadyIframe() {
+  const _createQueueReadyIframe = () => {
     messagingIframe = document.createElement("iframe");
     messagingIframe.style.display = "none";
-    messagingIframe.src = CUSTOM_PROTOCOL_SCHEME + "://" + QUEUE_HAS_MESSAGE;
+    messagingIframe.src = `${CUSTOM_PROTOCOL_SCHEME}:${QUEUE_HAS_MESSAGE}`;
     document.documentElement.appendChild(messagingIframe);
-  }
+  };
 
-  function _createQueueReadyIframe4biz() {
+  const _createQueueReadyIframe4biz = () => {
     bizMessagingIframe = document.createElement("iframe");
     bizMessagingIframe.style.display = "none";
     document.documentElement.appendChild(bizMessagingIframe);
-  }
+  };
 
-  function init(messageHandler) {
+  const init = (messageHandler) => {
     if (WebViewJavascriptBridge._messageHandler) {
       _cleanup();
     }
@@ -40,14 +41,12 @@
     WebViewJavascriptBridge._messageHandler = messageHandler;
     const receivedMessages = receiveMessageQueue;
     receiveMessageQueue = null;
-    for (let i = 0; i < receivedMessages.length; i++) {
-      _dispatchMessageFromNative(receivedMessages[i]);
-    }
+    receivedMessages.forEach(_dispatchMessageFromNative);
     WebViewJavascriptBridge.inited = true;
     setInterval(_cleanupCallbacks, CALLBACK_TIMEOUT);
-  }
+  };
 
-  function _cleanup() {
+  const _cleanup = () => {
     receiveMessageQueue = [];
     Object.keys(messageHandlers).forEach((key) => delete messageHandlers[key]);
     sendMessageQueue = [];
@@ -68,9 +67,9 @@
       document.documentElement.removeChild(bizMessagingIframe);
       bizMessagingIframe = null;
     }
-  }
+  };
 
-  function _cleanupCallbacks() {
+  const _cleanupCallbacks = () => {
     const now = Date.now();
     Object.keys(responseCallbacks).forEach((key) => {
       const callback = responseCallbacks[key];
@@ -78,36 +77,35 @@
         delete responseCallbacks[key];
       }
     });
-  }
+  };
 
-  function send(data, responseCallback) {
+  const send = (data, responseCallback) => {
     _doSend("send", data, responseCallback);
-  }
+  };
 
-  function registerHandler(handlerName, handler) {
+  const registerHandler = (handlerName, handler) => {
     messageHandlers[handlerName] = handler;
-  }
+  };
 
-  function removeHandler(handlerName) {
+  const removeHandler = (handlerName) => {
     delete messageHandlers[handlerName];
-  }
+  };
 
-  function callHandler(handlerName, data, responseCallback) {
-    if (arguments.length == 2 && typeof data == "function") {
+  const callHandler = (handlerName, data, responseCallback) => {
+    if (arguments.length === 2 && typeof data === "function") {
       responseCallback = data;
       data = null;
     }
     _doSend(handlerName, data, responseCallback);
-  }
+  };
 
-  function _doSend(handlerName, message, responseCallback) {
+  const _doSend = (handlerName, message, responseCallback) => {
     let callbackId = "";
     if (responseCallback) {
       callbackId =
         typeof responseCallback === "string"
           ? responseCallback
           : `cb_${uniqueId++}_${Date.now()}`;
-
       if (typeof responseCallback === "function") {
         responseCallbacks[callbackId] = {
           callback: responseCallback,
@@ -115,17 +113,18 @@
         };
       }
     }
-
+    const messageObject =
+      typeof message === "string" ? { data: message } : message;
     if (callbackId) {
-      message.callbackId = callbackId;
+      messageObject.callbackId = callbackId;
     }
-
     try {
-      const fn = eval("WebViewJavascriptBridge." + handlerName);
+      const fn = WebViewJavascriptBridge[handlerName];
       if (typeof fn === "function") {
+        const messageData = JSON.stringify(messageObject);
         const responseData = fn.call(
           WebViewJavascriptBridge,
-          JSON.stringify(message),
+          messageData,
           callbackId
         );
         if (responseData && responseCallbacks[callbackId]) {
@@ -134,13 +133,13 @@
         }
       }
     } catch (e) {
-      console.log(`[ERROR] ==> ${e}`);
+      console.error(`WebViewJavascriptBridge:ERROR in _doSend`, e);
     }
-    sendMessageQueue.push(message);
-    messagingIframe.src = CUSTOM_PROTOCOL_SCHEME + "://" + QUEUE_HAS_MESSAGE;
-  }
+    sendMessageQueue.push(messageObject);
+    messagingIframe.src = `${CUSTOM_PROTOCOL_SCHEME}:${QUEUE_HAS_MESSAGE}`;
+  };
 
-  function _fetchQueue() {
+  const _fetchQueue = () => {
     if (sendMessageQueue.length === 0) {
       return;
     }
@@ -155,19 +154,35 @@
     stoId = null;
     const messageQueueString = JSON.stringify(sendMessageQueue);
     sendMessageQueue = [];
-    bizMessagingIframe.src =
-      CUSTOM_PROTOCOL_SCHEME +
-        "://return/_fetchQueue/" +
-      encodeURIComponent(messageQueueString);
-  }
+    bizMessagingIframe.src = `${CUSTOM_PROTOCOL_SCHEME}:${encodeURIComponent(
+      messageQueueString
+    )}`;
+  };
 
-  function _dispatchMessageFromNative(messageJSON) {
-    setTimeout(function () {
-      const message = JSON.parse(messageJSON);
+  const _dispatchMessageFromNative = (messageJSON) => {
+    setTimeout(() => {
+      let message;
+      try {
+        message =
+          typeof messageJSON === "string"
+            ? JSON.parse(messageJSON)
+            : messageJSON;
+      } catch (e) {
+        console.error("WebViewJavascriptBridge: Failed to parse message", e);
+        return;
+      }
+      if (!message || typeof message !== "object") {
+        console.error("WebViewJavascriptBridge: Invalid message format");
+        return;
+      }
       let responseCallback;
       if (message.responseId) {
         const callbackInfo = responseCallbacks[message.responseId];
         if (!callbackInfo) {
+          console.warn(
+            "WebViewJavascriptBridge: Response callback not found",
+            message.responseId
+          );
           return;
         }
         responseCallback = callbackInfo.callback;
@@ -176,36 +191,32 @@
       } else {
         if (message.callbackId) {
           const callbackResponseId = message.callbackId;
-          responseCallback = function (responseData) {
-            _doSend("response", responseData, callbackResponseId);
-          };
+          responseCallback = (responseData) =>
+          _doSend("response", responseData, callbackResponseId);
         }
         let handler = WebViewJavascriptBridge._messageHandler;
-        if (message.handlerName) {
+        if (
+          message.handlerName &&
+            typeof messageHandlers[message.handlerName] === "function"
+        ) {
           handler = messageHandlers[message.handlerName];
         }
         try {
           handler(message.data, responseCallback);
         } catch (exception) {
-          if (typeof console != "undefined") {
-            console.log(
-              "WebViewJavascriptBridge: WARNING: javascript handler threw.",
-              message,
-              exception
-            );
-          }
+          console.error("WebViewJavascriptBridge: Error in handler", exception);
         }
       }
     });
-  }
+  };
 
-  function _handleMessageFromNative(messageJSON) {
+  const _handleMessageFromNative = (messageJSON) => {
     if (receiveMessageQueue) {
       receiveMessageQueue.push(messageJSON);
     } else {
       _dispatchMessageFromNative(messageJSON);
     }
-  }
+  };
 
   WebViewJavascriptBridge.init = init;
   WebViewJavascriptBridge.doSend = send;
@@ -217,15 +228,10 @@
   const readyEvent = new CustomEvent("WebViewJavascriptBridgeReady", {
     detail: { bridge: WebViewJavascriptBridge },
   });
-  readyEvent.bridge = WebViewJavascriptBridge; // 向后兼容
+  readyEvent.bridge = WebViewJavascriptBridge;
 
   const jobs = window.WVJBCallbacks || [];
-
   window.WVJBCallbacks = [];
-
-  jobs.forEach(function (job) {
-    job(WebViewJavascriptBridge);
-  });
-
+  jobs.forEach((job) => job(WebViewJavascriptBridge));
   document.dispatchEvent(readyEvent);
 })();
