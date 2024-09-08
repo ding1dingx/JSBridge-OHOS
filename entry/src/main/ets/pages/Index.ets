@@ -27,9 +27,9 @@ struct Index {
         })
         .zoomAccess(false)
         .onPageEnd(() => {
-          let jsBridge = getContext(this).resourceManager.getRawFileContentSync('WebViewJavascriptBridge.min.js')
-          let decoder = util.TextDecoder.create('utf-8')
-          let content = decoder.decodeToString(jsBridge).trim()
+          const jsBridge = getContext(this).resourceManager.getRawFileContentSync('WebViewJavascriptBridge.min.js')
+          const decoder = util.TextDecoder.create('utf-8')
+          const content = decoder.decodeToString(jsBridge).trim()
           log.info('读取到 ' + content)
           this.controller.loadUrl('javascript:' + content)
         })
