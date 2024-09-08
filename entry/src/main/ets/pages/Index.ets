@@ -42,7 +42,7 @@ struct Index {
 
       Row() {
         Button('给h5发送消息，有回调').onClick(() => {
-          this.jsBridgeHelper.callHandler('functionInJs', '大哥好呀', (data) => {
+          this.jsBridgeHelper.callHandler('functionInJS', '大哥好呀', (data) => {
             log.info(`Button => 点击回调 ${data}`)
           })
         }).fontSize(14)

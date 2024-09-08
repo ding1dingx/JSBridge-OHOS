@@ -120,7 +120,7 @@
           }
         });
 
-        bridge.registerHandler("functionInJs", (data, responseCallback) => {
+        bridge.registerHandler("functionInJS", (data, responseCallback) => {
           log(`Data from native: ${data}${Date.now()}`);
           if (responseCallback) {
             responseCallback("Javascript Says Right back aka!");
