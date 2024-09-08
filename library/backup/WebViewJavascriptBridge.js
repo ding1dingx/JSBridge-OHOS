@@ -19,20 +19,20 @@
   const QUEUE_HAS_MESSAGE = "__QUEUE_MESSAGE__";
   const CALLBACK_TIMEOUT = 60000;
 
-  const _createQueueReadyIframe = () => {
+  function _createQueueReadyIframe() {
     messagingIframe = document.createElement("iframe");
     messagingIframe.style.display = "none";
     messagingIframe.src = `${CUSTOM_PROTOCOL_SCHEME}:${QUEUE_HAS_MESSAGE}`;
     document.documentElement.appendChild(messagingIframe);
-  };
+  }
 
-  const _createQueueReadyIframe4biz = () => {
+  function _createQueueReadyIframe4biz() {
     bizMessagingIframe = document.createElement("iframe");
     bizMessagingIframe.style.display = "none";
     document.documentElement.appendChild(bizMessagingIframe);
-  };
+  }
 
-  const init = (messageHandler) => {
+  function init(messageHandler) {
     if (WebViewJavascriptBridge._messageHandler) {
       _cleanup();
     }
@@ -44,15 +44,17 @@
     receivedMessages.forEach(_dispatchMessageFromNative);
     WebViewJavascriptBridge.inited = true;
     setInterval(_cleanupCallbacks, CALLBACK_TIMEOUT);
-  };
+  }
 
-  const _cleanup = () => {
+  function _cleanup() {
     receiveMessageQueue = [];
-    Object.keys(messageHandlers).forEach((key) => delete messageHandlers[key]);
+    Object.keys(messageHandlers).forEach(function (key) {
+      delete messageHandlers[key];
+    });
     sendMessageQueue = [];
-    Object.keys(responseCallbacks).forEach(
-      (key) => delete responseCallbacks[key]
-    );
+    Object.keys(responseCallbacks).forEach(function (key) {
+      delete responseCallbacks[key];
+    });
     uniqueId = 1;
     lastCallTime = 0;
     if (stoId) {
@@ -67,39 +69,39 @@
       document.documentElement.removeChild(bizMessagingIframe);
       bizMessagingIframe = null;
     }
-  };
+  }
 
-  const _cleanupCallbacks = () => {
+  function _cleanupCallbacks() {
     const now = Date.now();
-    Object.keys(responseCallbacks).forEach((key) => {
+    Object.keys(responseCallbacks).forEach(function (key) {
       const callback = responseCallbacks[key];
       if (callback.timestamp && now - callback.timestamp > CALLBACK_TIMEOUT) {
         delete responseCallbacks[key];
       }
     });
-  };
+  }
 
-  const send = (data, responseCallback) => {
+  function send(data, responseCallback) {
     _doSend("send", data, responseCallback);
-  };
+  }
 
-  const registerHandler = (handlerName, handler) => {
+  function registerHandler(handlerName, handler) {
     messageHandlers[handlerName] = handler;
-  };
+  }
 
-  const removeHandler = (handlerName) => {
+  function removeHandler(handlerName) {
     delete messageHandlers[handlerName];
-  };
+  }
 
-  const callHandler = (handlerName, data, responseCallback) => {
+  function callHandler(handlerName, data, responseCallback) {
     if (arguments.length === 2 && typeof data === "function") {
       responseCallback = data;
       data = null;
     }
     _doSend(handlerName, data, responseCallback);
-  };
+  }
 
-  const _doSend = (handlerName, message, responseCallback) => {
+  function _doSend(handlerName, message, responseCallback) {
     let callbackId = "";
     if (responseCallback) {
       callbackId =
@@ -137,9 +139,9 @@
     }
     sendMessageQueue.push(messageObject);
     messagingIframe.src = `${CUSTOM_PROTOCOL_SCHEME}:${QUEUE_HAS_MESSAGE}`;
-  };
+  }
 
-  const _fetchQueue = () => {
+  function _fetchQueue() {
     if (sendMessageQueue.length === 0) {
       return;
     }
@@ -157,10 +159,10 @@
     bizMessagingIframe.src = `${CUSTOM_PROTOCOL_SCHEME}:${encodeURIComponent(
       messageQueueString
     )}`;
-  };
+  }
 
-  const _dispatchMessageFromNative = (messageJSON) => {
-    setTimeout(() => {
+  function _dispatchMessageFromNative(messageJSON) {
+    setTimeout(function () {
       let message;
       try {
         message =
@@ -191,13 +193,14 @@
       } else {
         if (message.callbackId) {
           const callbackResponseId = message.callbackId;
-          responseCallback = (responseData) =>
-          _doSend("response", responseData, callbackResponseId);
+          responseCallback = function (responseData) {
+            _doSend("response", responseData, callbackResponseId);
+          };
         }
         let handler = WebViewJavascriptBridge._messageHandler;
         if (
           message.handlerName &&
-            typeof messageHandlers[message.handlerName] === "function"
+          typeof messageHandlers[message.handlerName] === "function"
         ) {
           handler = messageHandlers[message.handlerName];
         }
@@ -208,15 +211,15 @@
         }
       }
     });
-  };
+  }
 
-  const _handleMessageFromNative = (messageJSON) => {
+  function _handleMessageFromNative(messageJSON) {
     if (receiveMessageQueue) {
       receiveMessageQueue.push(messageJSON);
     } else {
       _dispatchMessageFromNative(messageJSON);
     }
-  };
+  }
 
   WebViewJavascriptBridge.init = init;
   WebViewJavascriptBridge.doSend = send;
@@ -232,7 +235,9 @@
 
   const jobs = window.WVJBCallbacks || [];
   window.WVJBCallbacks = [];
-  jobs.forEach((job) => job(WebViewJavascriptBridge));
-  
+  jobs.forEach(function (job) {
+    job(WebViewJavascriptBridge);
+  });
+
   document.dispatchEvent(readyEvent);
 })();
