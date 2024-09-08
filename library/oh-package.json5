@@ -1,9 +1,9 @@
 {
   "name": "@ding1ding/jsbridge-ohos",
-  "version": "1.0.0",
-  "description": "Please describe the basic information.",
+  "version": "0.1.0",
+  "description": "Tiny JavaScript Bridge for HarmonyOS.",
   "main": "Index.ets",
-  "author": "",
+  "author": "ding1ding.com",
   "license": "MIT",
   "dependencies": {}
 }

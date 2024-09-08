@@ -134,7 +134,7 @@
         }
       }
     } catch (e) {
-      console.log(e);
+      console.log(`[ERROR] ==> ${e}`);
     }
     sendMessageQueue.push(message);
     messagingIframe.src = CUSTOM_PROTOCOL_SCHEME + "://" + QUEUE_HAS_MESSAGE;
@@ -157,7 +157,7 @@
     sendMessageQueue = [];
     bizMessagingIframe.src =
       CUSTOM_PROTOCOL_SCHEME +
-      "://return/_fetchQueue/" +
+        "://return/_fetchQueue/" +
       encodeURIComponent(messageQueueString);
   }
 

@@ -4,7 +4,7 @@ import { JSRequest, JSResponse } from './JSTypes';
 import { createLogger } from '../utils/Logger';
 import hilog from '@ohos.hilog';
 
-const log = createLogger(0x1000, 'JSBridgeHelper');
+const log = createLogger(0x0000, 'JSBridgeHelper');
 log.setLogLevel(hilog.LogLevel.INFO);
 
 export class JSBridgeHelper {
