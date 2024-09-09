@@ -1,5 +1,6 @@
 ;(function () {
   "use strict";
+
   if (window.WebViewJavascriptBridge && window.WebViewJavascriptBridge.inited) {
     return;
   }
@@ -48,13 +49,11 @@
 
   function _cleanup() {
     receiveMessageQueue = [];
-    Object.keys(messageHandlers).forEach(function (key) {
-      delete messageHandlers[key];
-    });
+    Object.keys(messageHandlers).forEach((key) => delete messageHandlers[key]);
     sendMessageQueue = [];
-    Object.keys(responseCallbacks).forEach(function (key) {
-      delete responseCallbacks[key];
-    });
+    Object.keys(responseCallbacks).forEach(
+      (key) => delete responseCallbacks[key]
+    );
     uniqueId = 1;
     lastCallTime = 0;
     if (stoId) {
@@ -73,7 +72,7 @@
 
   function _cleanupCallbacks() {
     const now = Date.now();
-    Object.keys(responseCallbacks).forEach(function (key) {
+    Object.keys(responseCallbacks).forEach((key) => {
       const callback = responseCallbacks[key];
       if (callback.timestamp && now - callback.timestamp > CALLBACK_TIMEOUT) {
         delete responseCallbacks[key];
@@ -102,24 +101,25 @@
   }
 
   function _doSend(handlerName, message, responseCallback) {
-    let callbackId = "";
-    if (responseCallback) {
-      callbackId =
-        typeof responseCallback === "string"
-          ? responseCallback
-          : `cb_${uniqueId++}_${Date.now()}`;
-      if (typeof responseCallback === "function") {
-        responseCallbacks[callbackId] = {
-          callback: responseCallback,
-          timestamp: Date.now(),
-        };
-      }
+    const callbackId =
+      responseCallback &&
+      (typeof responseCallback === "string"
+        ? responseCallback
+        : `cb_${uniqueId++}_${Date.now()}`);
+
+    if (callbackId && typeof responseCallback === "function") {
+      responseCallbacks[callbackId] = {
+        callback: responseCallback,
+        timestamp: Date.now(),
+      };
     }
+
     const messageObject =
       typeof message === "string" ? { data: message } : message;
     if (callbackId) {
       messageObject.callbackId = callbackId;
     }
+
     try {
       const fn = WebViewJavascriptBridge[handlerName];
       if (typeof fn === "function") {
@@ -137,6 +137,7 @@
     } catch (e) {
       console.error(`WebViewJavascriptBridge:ERROR in _doSend`, e);
     }
+
     sendMessageQueue.push(messageObject);
     messagingIframe.src = `${CUSTOM_PROTOCOL_SCHEME}:${QUEUE_HAS_MESSAGE}`;
   }
@@ -162,7 +163,7 @@
   }
 
   function _dispatchMessageFromNative(messageJSON) {
-    setTimeout(function () {
+    setTimeout(() => {
       let message;
       try {
         message =
@@ -193,9 +194,8 @@
       } else {
         if (message.callbackId) {
           const callbackResponseId = message.callbackId;
-          responseCallback = function (responseData) {
+          responseCallback = (responseData) =>
             _doSend("response", responseData, callbackResponseId);
-          };
         }
         let handler = WebViewJavascriptBridge._messageHandler;
         if (
@@ -235,9 +235,7 @@
 
   const jobs = window.WVJBCallbacks || [];
   window.WVJBCallbacks = [];
-  jobs.forEach(function (job) {
-    job(WebViewJavascriptBridge);
-  });
+  jobs.forEach((job) => job(WebViewJavascriptBridge));
 
   document.dispatchEvent(readyEvent);
 })();
