@@ -31,7 +31,7 @@ export class JSBridgeHelper {
       responseData: data,
     };
     const content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(message)}');`;
-    log.info(`handleMessageFromNative ==> ${content}`);
+    log.info(`sendResponse ==> ${content}`);
     this.controller.runJavaScript(content);
   }
 
@@ -50,10 +50,11 @@ export class JSBridgeHelper {
       this.messageMap.set(callbackId, callback);
     }
     const content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(message)}');`;
+    log.info(`callHandler ==> ${content}`);
     this.controller.runJavaScript(content);
   }
 
   sendToWeb(data: string): void {
-    this.callHandler("", `${data}-${Date.now()}`);
+    this.callHandler("", data);
   }
 }

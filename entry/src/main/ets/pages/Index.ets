@@ -48,7 +48,7 @@ struct Index {
         }).fontSize(14)
         Blank().width(10)
         Button('给h5发送消息，无回调').onClick(() => {
-          this.jsBridgeHelper.sendToWeb('hello')
+          this.jsBridgeHelper.sendToWeb(`hello-${Date.now()}`)
         }).fontSize(14)
       }.width('100%')
       .justifyContent(FlexAlign.Center)
