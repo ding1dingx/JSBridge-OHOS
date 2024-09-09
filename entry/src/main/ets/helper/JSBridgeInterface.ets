@@ -13,12 +13,12 @@ export class JSBridgeInterface {
   }
 
   send(data: string, callbackId: string): string {
-    log.info(`MainJavascriptInterface: method=send, data=>${data}, callbackId=>${callbackId}`);
+    log.info(`method=send, data=>${data}, callbackId=>${callbackId}`);
     return "[--]";
   }
 
   response(data: string, responseId: string): void {
-    log.info(`MainJavascriptInterface: method=response, data=>${data}, responseId=>${responseId}`);
+    log.info(`method=response, data=>${data}, responseId=>${responseId}`);
     if (this.jsBridgeHelper.messageMap.hasKey(responseId)) {
       this.jsBridgeHelper.messageMap.remove(responseId)(data);
     }
@@ -28,13 +28,13 @@ export class JSBridgeInterface {
     data: string | object | null,
     callbackId: string
   ) {
-    log.info(`MainJavascriptInterface: method=deviceLoadJavascriptSuccess data=>${data}, responseId=>${callbackId}`);
+    log.info(`method=deviceLoadJavascriptSuccess data=>${data}, responseId=>${callbackId}`);
     const jsonString = '{"result":"HarmonyOS"}';
     this.jsBridgeHelper.sendResponse(JSON.parse(jsonString), callbackId);
   }
 
   submitFromWeb(data: string | object | null, callbackId: string) {
-    log.info(`MainJavascriptInterface: method=submitFromWeb data=>${data}, responseId=>${callbackId}`);
+    log.info(`method=submitFromWeb data=>${data}, responseId=>${callbackId}`);
     this.jsBridgeHelper.sendResponse("submitFromWeb response", callbackId);
   }
 }
