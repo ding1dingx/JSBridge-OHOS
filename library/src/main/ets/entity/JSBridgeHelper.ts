@@ -34,7 +34,12 @@ export class JSBridgeHelper {
     this.controller.runJavaScript(script);
   }
 
-  sendResponse(data: string | object | null, callbackId: string) {
+  reset(): void {
+    this.responseCallbacks.clear()
+    log.info('reset...')
+  }
+
+  sendResponse(data: string | object | null, callbackId: string): void {
     const response: JSResponse = {
       responseId: callbackId,
       responseData: data,
@@ -46,7 +51,7 @@ export class JSBridgeHelper {
     handlerName: string,
     data: string,
     callback?: (event: string) => void
-  ) {
+  ): void {
     const request: JSRequest = {
       data,
       handlerName,
@@ -58,7 +63,7 @@ export class JSBridgeHelper {
     this.dispatchMessage(JSON.stringify(request))
   }
 
-  sendToWeb(data: string) {
+  sendToWeb(data: string): void {
     this.callHandler("", data);
   }
 }
