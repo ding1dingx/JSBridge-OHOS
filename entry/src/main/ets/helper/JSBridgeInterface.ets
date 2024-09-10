@@ -1,9 +1,12 @@
 import { JSON } from '@kit.ArkTS';
-import { createLogger, JSBridgeHelper } from '@ding1ding/jsbridge-ohos';
+import { createLoggerWithOptions, JSBridgeHelper } from '@ding1ding/jsbridge-ohos';
 import hilog from '@ohos.hilog';
 
-const log = createLogger(0x1000, 'JSBridgeInterface');
-log.setLogLevel(hilog.LogLevel.INFO);
+const log = createLoggerWithOptions({
+  domain: 0x0000,
+  prefix: "JSBridgeInterface",
+  logLevel: hilog.LogLevel.INFO
+});
 
 export class JSBridgeInterface {
   private jsBridgeHelper: JSBridgeHelper;

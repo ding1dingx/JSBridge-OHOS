@@ -1,11 +1,14 @@
 import { webview } from '@kit.ArkWeb';
 import { util } from '@kit.ArkTS';
-import { createLogger, JSBridgeHelper } from '@ding1ding/jsbridge-ohos';
+import { createLoggerWithOptions, JSBridgeHelper } from '@ding1ding/jsbridge-ohos';
 import { JSBridgeInterface } from '../helper/JSBridgeInterface';
 import hilog from '@ohos.hilog';
 
-const log = createLogger(0x1000, 'Index');
-log.setLogLevel(hilog.LogLevel.DEBUG);
+const log = createLoggerWithOptions({
+  domain: 0x0000,
+  prefix: "Index",
+  logLevel: hilog.LogLevel.INFO
+});
 
 @Entry
 @Component

@@ -1,10 +1,13 @@
 import { HashMap } from '@kit.ArkTS';
-import { createLogger } from '../utils/Logger';
+import { createLoggerWithOptions } from '../utils/Logger';
 import webview from '@ohos.web.webview';
 import hilog from '@ohos.hilog';
 
-const log = createLogger(0x0000, "JSBridgeHelper");
-log.setLogLevel(hilog.LogLevel.INFO);
+const log = createLoggerWithOptions({
+  domain: 0x0000,
+  prefix: "JSBridgeHelper",
+  logLevel: hilog.LogLevel.INFO
+});
 
 interface JSRequest {
   callbackId: string;
