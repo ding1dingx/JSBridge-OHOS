@@ -20,27 +20,27 @@ class Logger {
     }
   }
 
-  debug(format: string, ...args: any[]): void {
+  debug(format: string, ...args: any[]) {
     this.log('DEBUG', format, ...args);
   }
 
-  info(format: string, ...args: any[]): void {
+  info(format: string, ...args: any[]) {
     this.log('INFO', format, ...args);
   }
 
-  warn(format: string, ...args: any[]): void {
+  warn(format: string, ...args: any[]) {
     this.log('WARN', format, ...args);
   }
 
-  error(format: string, ...args: any[]): void {
+  error(format: string, ...args: any[]) {
     this.log('ERROR', format, ...args);
   }
 
-  fatal(format: string, ...args: any[]): void {
+  fatal(format: string, ...args: any[]) {
     this.log('FATAL', format, ...args);
   }
 
-  setLogLevel(level: hilog.LogLevel): void {
+  setLogLevel(level: hilog.LogLevel) {
     this.logLevel = level;
     // 注意：hilog.isLoggable 实际上并不设置日志级别，它只是检查给定的级别是否可记录
     // 因此，我们不需要在这里调用它
