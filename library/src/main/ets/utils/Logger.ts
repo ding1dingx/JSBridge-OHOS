@@ -23,7 +23,7 @@ function createLogger<T extends LogLevel | hilog.LogLevel>(options: LoggerOption
   setLogLevel: (level: T) => void;
   getLogLevel: () => T;
 } {
-  let { domain = 0x0000, tag = 'Logger', logLevel = hilog.LogLevel.INFO } = options;
+  let { domain = 0x0000, tag = 'Logger', logLevel = hilog.LogLevel.DEBUG } = options;
 
   const log = (level: LogLevel, format: string, ...args: any[]) => {
     for (const logLevel of Object.values(LogLevel)) {
