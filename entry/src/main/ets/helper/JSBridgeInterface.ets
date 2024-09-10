@@ -19,8 +19,8 @@ export class JSBridgeInterface {
 
   response(data: string, responseId: string): void {
     log.info(`method=response, data=>${data}, responseId=>${responseId}`);
-    if (this.jsBridgeHelper.messageMap.hasKey(responseId)) {
-      this.jsBridgeHelper.messageMap.remove(responseId)(data);
+    if (this.jsBridgeHelper.responseCallbacks.hasKey(responseId)) {
+      this.jsBridgeHelper.responseCallbacks.remove(responseId)(data);
     }
   }
 

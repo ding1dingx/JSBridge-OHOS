@@ -19,42 +19,43 @@ interface JSResponse {
 
 export class JSBridgeHelper {
   private controller: webview.WebviewController;
-  messageMap: HashMap<string, (data: string) => void> = new HashMap();
+  responseCallbacks: HashMap<string, (data: string) => void> = new HashMap();
 
   constructor(controller: webview.WebviewController) {
     this.controller = controller;
   }
 
-  sendResponse(data: string | object | null, callbackId: string): void {
-    const message: JSResponse = {
+  private dispatchMessage(message: string) {
+    const script = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${message}');`;
+    log.info(`dispatchMessage ==> ${script}`);
+    this.controller.runJavaScript(script);
+  }
+
+  sendResponse(data: string | object | null, callbackId: string) {
+    const response: JSResponse = {
       responseId: callbackId,
       responseData: data,
     };
-    const content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(message)}');`;
-    log.info(`sendResponse ==> ${content}`);
-    this.controller.runJavaScript(content);
+    this.dispatchMessage(JSON.stringify(response))
   }
 
   callHandler(
     handlerName: string,
     data: string,
     callback?: (event: string) => void
-  ): void {
-    const callbackId = `arkts_cb_${Date.now()}`;
-    const message: JSRequest = {
+  ) {
+    const request: JSRequest = {
       data,
       handlerName,
-      callbackId: callback ? callbackId : "",
+      callbackId: `native_cb_${Date.now()}`,
     };
     if (callback) {
-      this.messageMap.set(callbackId, callback);
+      this.responseCallbacks.set(request.callbackId, callback);
     }
-    const content = `javascript:WebViewJavascriptBridge._handleMessageFromNative('${JSON.stringify(message)}');`;
-    log.info(`callHandler ==> ${content}`);
-    this.controller.runJavaScript(content);
+    this.dispatchMessage(JSON.stringify(request))
   }
 
-  sendToWeb(data: string): void {
+  sendToWeb(data: string) {
     this.callHandler("", data);
   }
 }
