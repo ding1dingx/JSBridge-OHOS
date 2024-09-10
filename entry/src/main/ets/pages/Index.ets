@@ -18,6 +18,10 @@ struct Index {
   @State jsBridge: JSBridgeInterface = new JSBridgeInterface(this.jsBridgeHelper);
   @State url: string | Resource = $rawfile('index.html')
 
+  aboutToDisappear(): void {
+    this.jsBridgeHelper.reset()
+  }
+
   build() {
     Column() {
       Web({ src: this.url, controller: this.controller })
