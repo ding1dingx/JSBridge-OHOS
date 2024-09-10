@@ -10,7 +10,7 @@ enum LogLevel {
 
 interface LoggerOptions {
   domain?: number;
-  prefix?: string;
+  tag?: string;
   logLevel?: LogLevel | hilog.LogLevel;
 }
 
@@ -23,13 +23,13 @@ function createLogger<T extends LogLevel | hilog.LogLevel>(options: LoggerOption
   setLogLevel: (level: T) => void;
   getLogLevel: () => T;
 } {
-  let { domain = 0x0000, prefix = 'Logger', logLevel = hilog.LogLevel.INFO } = options;
+  let { domain = 0x0000, tag = 'Logger', logLevel = hilog.LogLevel.INFO } = options;
 
   const log = (level: LogLevel, format: string, ...args: any[]) => {
     for (const logLevel of Object.values(LogLevel)) {
       // 将 level 转换为 hilog.LogLevel 类型的值
       if (hilog.LogLevel[logLevel] >= hilog.LogLevel[level]) {
-        hilog[logLevel.toLowerCase()](domain, prefix, format, ...args);
+        hilog[logLevel.toLowerCase()](domain, tag, format, ...args);
         break;
       }
     }

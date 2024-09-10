@@ -6,7 +6,7 @@ import hilog from '@ohos.hilog';
 
 const log = createLoggerWithOptions({
   domain: 0x0000,
-  prefix: "Index",
+  tag: "Index",
   logLevel: hilog.LogLevel.INFO
 });
 

@@ -5,7 +5,7 @@ import hilog from '@ohos.hilog';
 
 const log = createLoggerWithOptions({
   domain: 0x0000,
-  prefix: "JSBridgeHelper",
+  tag: "JSBridgeHelper",
   logLevel: hilog.LogLevel.INFO
 });
 
