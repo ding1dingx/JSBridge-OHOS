@@ -8,13 +8,13 @@ enum LogLevel {
   FATAL = 'FATAL',
 }
 
-interface LoggerOptions {
+interface LogOptions {
   domain?: number;
   tag?: string;
   logLevel?: LogLevel | hilog.LogLevel;
 }
 
-function createLogger<T extends LogLevel | hilog.LogLevel>(options: LoggerOptions = {}): {
+function createLogger<T extends LogLevel | hilog.LogLevel>(options: LogOptions = {}): {
   debug: (format: string, ...args: any[]) => void;
   info: (format: string, ...args: any[]) => void;
   warn: (format: string, ...args: any[]) => void;
@@ -49,4 +49,4 @@ function createLogger<T extends LogLevel | hilog.LogLevel>(options: LoggerOption
 }
 
 export const log = createLogger();
-export const createLoggerWithOptions = (options: LoggerOptions) => createLogger(options);
+export const createLoggerWithOptions = (options: LogOptions) => createLogger(options);
